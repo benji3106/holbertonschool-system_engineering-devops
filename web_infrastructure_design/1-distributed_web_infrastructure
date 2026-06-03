@@ -1,0 +1,176 @@
+# 1. Distributed Web Infrastructure
+
+## Infrastructure
+
+```text
+User
+  |
+  | HTTP
+  v
+www.foobar.com
+  |
+  | DNS A Record
+  v
+8.8.8.8
+  |
+  v
++---------------------------+
+|     Load Balancer         |
+|        HAProxy            |
++------------+--------------+
+             |
+             | Round Robin
+     +-------+-------+
+     |               |
+     v               v
++-----------+   +-----------+
+| Server 1  |   | Server 2  |
+|           |   |           |
+| Nginx     |   | Nginx     |
+| App Server|   | App Server|
+| Code Base |   | Code Base |
+| MySQL     |   | MySQL     |
+| Primary   |   | Replica   |
++-----------+   +-----------+
+```
+
+## Explanation
+
+A user wants to access the website `www.foobar.com`.
+
+The browser asks DNS for the IP address of `www.foobar.com`.
+The DNS record points `www.foobar.com` to the server IP address `8.8.8.8`.
+
+The user request reaches the HAProxy load balancer.
+The load balancer distributes the traffic between Server 1 and Server 2.
+
+Each server contains:
+
+* one web server: Nginx
+* one application server
+* one set of application files
+* one MySQL database
+
+## Why are we adding each element?
+
+### Load balancer
+
+We add a load balancer to distribute incoming traffic between multiple servers.
+
+This improves availability and performance because one server does not have to handle all requests alone.
+
+### Second server
+
+We add a second server to reduce the load on the first server and to make the infrastructure more available.
+
+If one application server becomes unavailable, the other one may still serve requests.
+
+### Second web server
+
+Each server has its own Nginx web server so it can receive and handle HTTP requests forwarded by the load balancer.
+
+### Second application server
+
+Each server has its own application server so both servers can execute the application logic.
+
+### Second code base
+
+Each server has a copy of the application files so both servers can run the same website.
+
+### Second database
+
+The second database is used as a replica of the primary database.
+
+This helps distribute database reads and provides redundancy.
+
+## Load balancer distribution algorithm
+
+The load balancer is configured with the Round Robin algorithm.
+
+Round Robin sends requests to each server one after another.
+
+Example:
+
+```text
+Request 1 -> Server 1
+Request 2 -> Server 2
+Request 3 -> Server 1
+Request 4 -> Server 2
+```
+
+This allows traffic to be shared between the two servers.
+
+## Active-Active or Active-Passive setup
+
+This infrastructure is an Active-Active setup.
+
+In an Active-Active setup, all servers are running and serving traffic at the same time.
+
+In an Active-Passive setup, one server is active and handles the traffic, while another server stays on standby. The passive server is only used if the active server fails.
+
+## Database Primary-Replica cluster
+
+A Primary-Replica database cluster means there is one main database server called the Primary node and one or more Replica nodes.
+
+The Primary node receives all write operations, such as:
+
+* INSERT
+* UPDATE
+* DELETE
+
+The Replica node copies data from the Primary node and can be used for read operations, such as:
+
+* SELECT
+
+## Difference between Primary and Replica nodes
+
+The Primary node is used by the application for write operations.
+
+The Replica node is used mainly for read operations and backup/redundancy.
+
+Example:
+
+```text
+Create user -> Primary database
+Read user profile -> Replica database
+```
+
+The Replica database must stay synchronized with the Primary database.
+
+## Issues with this infrastructure
+
+### Single Point of Failure
+
+There are still SPOFs in this infrastructure.
+
+The load balancer is a SPOF because there is only one HAProxy server.
+
+If the load balancer fails, users cannot access the website.
+
+The Primary database is also a SPOF for write operations.
+
+If the Primary database fails, the application cannot write new data.
+
+### Security issues
+
+This infrastructure has security problems.
+
+There is no firewall, so the servers are more exposed to attacks.
+
+There is also no HTTPS, which means communication between the user and the website is not encrypted.
+
+Sensitive data could be intercepted.
+
+### No monitoring
+
+There is no monitoring system.
+
+This means administrators cannot easily detect:
+
+* server failures
+* high traffic
+* database problems
+* application errors
+* disk or memory issues
+
+Without monitoring, it is harder to react quickly when something goes wrong.
