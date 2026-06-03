@@ -1,1 +1,84 @@
 
+# 0. Simple Web Stack
+
+## Infrastructure
+
+```
+User
+  |
+  | HTTP/HTTPS
+  v
+www.foobar.com
+  |
+  | DNS (A Record)
+  v
+8.8.8.8
+  |
+  v
++----------------------------------+
+|             SERVER               |
+|          IP: 8.8.8.8            |
+|                                  |
+|  +----------------------------+  |
+|  |       Nginx Web Server     |  |
+|  +-------------+--------------+  |
+|                |                 |
+|                v                 |
+|  +----------------------------+  |
+|  |     Application Server     |  |
+|  +-------------+--------------+  |
+|                |                 |
+|                v                 |
+|  |     Application Files      |  |
+|  |       (Code Base)          |  |
+|                |                 |
+|                v                 |
+|  +----------------------------+  |
+|  |      MySQL Database        |  |
+|  +----------------------------+  |
++----------------------------------+
+```
+
+## Explanation
+
+### What is a server?
+
+A server is a computer that provides services, resources, or data to other computers (clients) over a network.
+
+### What is the role of the domain name?
+
+The domain name (foobar.com) provides a human-readable address that allows users to access the website without remembering the server IP address.
+
+### What type of DNS record is www in www.foobar.com?
+
+The www record is an A record that points to the IPv4 address 8.8.8.8.
+
+### What is the role of the web server (Nginx)?
+
+The web server receives HTTP/HTTPS requests from clients, serves static content, and forwards dynamic requests to the application server.
+
+### What is the role of the application server?
+
+The application server executes the application code, processes requests, interacts with the database, and generates responses.
+
+### What is the role of the database (MySQL)?
+
+The database stores and manages application data such as users, products, orders, and other information.
+
+### What is the server using to communicate with the user's computer?
+
+The server communicates with the client using HTTP or HTTPS over the TCP/IP protocol suite.
+
+## Issues with this infrastructure
+
+### Single Point of Failure (SPOF)
+
+There is only one server. If the server fails, the entire website becomes unavailable.
+
+### Downtime during maintenance
+
+When deploying new code or restarting services such as Nginx or the application server, the website may become temporarily unavailable.
+
+### Cannot scale
+
+Because all components run on a single server, the infrastructure cannot efficiently handle a large amount of incoming traffic.
