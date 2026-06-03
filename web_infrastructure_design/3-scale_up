@@ -1,0 +1,154 @@
+# 3. Scale Up
+
+## Infrastructure
+
+```text
+User
+  |
+  | HTTPS
+  v
+www.foobar.com
+  |
+  v
++---------------------+     +---------------------+
+| Load Balancer 1     |<--->| Load Balancer 2     |
+| HAProxy             |     | HAProxy             |
++----------+----------+     +----------+----------+
+           |
+           v
++---------------------+
+| Web Server          |
+| Nginx               |
++----------+----------+
+           |
+           v
++---------------------+
+| Application Server  |
+| App Code Base       |
++----------+----------+
+           |
+           v
++---------------------+
+| Database Server     |
+| MySQL               |
++---------------------+
+```
+
+## Explanation
+
+A user wants to access `www.foobar.com`.
+
+The browser sends an HTTPS request to the website.
+The request reaches the HAProxy load balancer cluster.
+
+The load balancers distribute traffic to the web server.
+The web server, application server, and database are now separated into different servers.
+
+This makes the infrastructure easier to scale, maintain, and monitor.
+
+## Additional elements
+
+### New server
+
+We add one new server to separate infrastructure components.
+
+Instead of running the web server, application server, and database on the same machine, each component can now have its own dedicated server.
+
+This improves performance because each server has its own CPU, RAM, disk, and network resources.
+
+### Second load balancer
+
+We add a second HAProxy load balancer and configure it as a cluster with the first one.
+
+This removes the load balancer as a Single Point of Failure.
+
+If one load balancer fails, the other one can continue receiving traffic.
+
+### Load balancer cluster
+
+The two HAProxy load balancers work together as a cluster.
+
+Usually, they share a virtual IP address.
+
+One load balancer receives traffic, and if it fails, the second load balancer takes over.
+
+This improves availability.
+
+### Web server on its own server
+
+The web server, usually Nginx, is placed on its own server.
+
+Its role is to handle HTTP/HTTPS requests, serve static files, and forward dynamic requests to the application server.
+
+Separating it makes it easier to scale web traffic independently.
+
+### Application server on its own server
+
+The application server is placed on its own server.
+
+Its role is to execute the application code and process business logic.
+
+Separating it improves performance and makes deployments easier.
+
+### Database on its own server
+
+The database, MySQL, is placed on its own server.
+
+Its role is to store and manage application data.
+
+Separating the database improves performance, security, and reliability because the database no longer competes with Nginx or the application server for resources.
+
+## Application server vs Web server
+
+### Web server
+
+A web server handles HTTP/HTTPS requests from clients.
+
+It can serve static files such as:
+
+* HTML
+* CSS
+* JavaScript
+* images
+
+It can also forward dynamic requests to the application server.
+
+Example:
+
+```text
+Nginx
+```
+
+### Application server
+
+An application server runs the application code.
+
+It handles the business logic of the website.
+
+For example, it can:
+
+* authenticate users
+* process forms
+* create orders
+* interact with the database
+* generate dynamic pages or API responses
+
+Example:
+
+```text
+Node.js, Flask, Django, Ruby on Rails, PHP-FPM
+```
+
+## Why this infrastructure is better
+
+This infrastructure is better because each component has a dedicated role.
+
+Advantages:
+
+* better performance
+* easier scaling
+* better fault isolation
+* easier maintenance
+* improved availability with two load balancers
+
+If the website needs more capacity, we can add more web servers, more application servers, or improve the database layer separately.
