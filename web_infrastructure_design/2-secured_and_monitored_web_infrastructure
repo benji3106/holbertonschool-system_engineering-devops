@@ -1,0 +1,240 @@
+# 2. Secured and Monitored Web Infrastructure
+
+## Infrastructure
+
+```text
+User
+  |
+  | HTTPS
+  v
+www.foobar.com
+  |
+  | DNS A Record
+  v
+8.8.8.8
+  |
+  v
++---------------------------+
+|        Firewall 1         |
++-------------+-------------+
+              |
+              v
++---------------------------+
+|   Load Balancer HAProxy   |
+|   SSL Certificate         |
++-------------+-------------+
+              |
+        +-----+-----+
+        |           |
+        v           v
++---------------+ +---------------+
+| Firewall 2    | | Firewall 3    |
++-------+-------+ +-------+-------+
+        |                 |
+        v                 v
++---------------+ +---------------+
+| Server 1      | | Server 2      |
+| Nginx         | | Nginx         |
+| App Server    | | App Server    |
+| Code Base     | | Code Base     |
+| MySQL Primary | | MySQL Replica |
+| Monitoring    | | Monitoring    |
+| Client        | | Client        |
++---------------+ +---------------+
+
++---------------+
+| Monitoring    |
+| Client on LB  |
++---------------+
+```
+
+## Explanation
+
+A user wants to access `www.foobar.com`.
+
+The browser resolves the domain name to the IP address `8.8.8.8` using DNS.
+The user sends an HTTPS request to the infrastructure.
+
+The request first goes through a firewall, then reaches the HAProxy load balancer.
+HAProxy uses the SSL certificate to serve encrypted HTTPS traffic.
+The load balancer forwards the request to one of the two backend servers.
+
+Each backend server contains:
+
+* Nginx web server
+* application server
+* application files
+* MySQL database
+* monitoring client
+
+## Why are we adding each element?
+
+### Firewalls
+
+We add firewalls to filter incoming and outgoing traffic.
+
+A firewall controls which network traffic is allowed or blocked.
+
+For example:
+
+* allow HTTPS traffic on port 443
+* block unwanted traffic
+* restrict database access
+* protect internal servers from direct public access
+
+### SSL certificate
+
+We add an SSL certificate to serve `www.foobar.com` over HTTPS.
+
+HTTPS encrypts the communication between the user and the website.
+
+This protects sensitive data such as:
+
+* passwords
+* personal information
+* cookies
+* payment data
+
+### Monitoring clients
+
+We add monitoring clients to collect metrics and logs from each server.
+
+The monitoring clients send data to a monitoring service such as Sumologic, Datadog, Prometheus, or another monitoring platform.
+
+Monitoring helps detect problems quickly.
+
+## What are firewalls for?
+
+Firewalls are used to protect servers by controlling network access.
+
+They decide which traffic is allowed and which traffic is blocked based on rules.
+
+Example:
+
+```text
+Allow port 443 for HTTPS
+Block unknown external traffic
+Allow MySQL only from trusted internal servers
+```
+
+## Why is the traffic served over HTTPS?
+
+Traffic is served over HTTPS to encrypt communication between the client and the server.
+
+Without HTTPS, data is sent in plain text and can be intercepted.
+
+HTTPS provides:
+
+* encryption
+* authentication
+* data integrity
+
+## What is monitoring used for?
+
+Monitoring is used to observe the health and performance of the infrastructure.
+
+It can track:
+
+* CPU usage
+* memory usage
+* disk usage
+* network traffic
+* HTTP errors
+* response time
+* database performance
+* application logs
+
+Monitoring allows engineers to detect incidents and react faster.
+
+## How does the monitoring tool collect data?
+
+The monitoring client runs on each server.
+
+It collects metrics and logs locally, then sends them to the monitoring platform.
+
+Example:
+
+```text
+Server metrics/logs
+      |
+      v
+Monitoring client
+      |
+      v
+Monitoring platform
+```
+
+The monitoring platform stores, analyzes, and displays the data in dashboards.
+
+## How to monitor web server QPS?
+
+QPS means Queries Per Second.
+
+To monitor the web server QPS, we need to collect request metrics from Nginx.
+
+We can:
+
+* enable Nginx access logs
+* use a monitoring agent to parse the logs
+* expose Nginx metrics with a status module
+* send the metrics to the monitoring platform
+* create a dashboard showing requests per second
+
+Example:
+
+```text
+Nginx requests per second = number of HTTP requests handled each second
+```
+
+## Issues with this infrastructure
+
+### SSL termination at the load balancer level
+
+Terminating SSL at the load balancer means HTTPS is decrypted at HAProxy.
+
+After that, traffic between the load balancer and the backend servers may be sent over plain HTTP.
+
+This is an issue because internal traffic is no longer encrypted.
+
+If someone gains access to the internal network, they could potentially read sensitive data.
+
+A better solution is to use end-to-end encryption between the client, the load balancer, and the backend servers.
+
+### Only one MySQL server can accept writes
+
+Having only one MySQL Primary server capable of accepting writes is a problem.
+
+If the Primary database fails, the application cannot write new data.
+
+Examples of blocked operations:
+
+* creating users
+* updating profiles
+* placing orders
+* saving messages
+
+The Replica can read data, but it cannot normally accept writes.
+
+This makes the Primary database a Single Point of Failure for write operations.
+
+### Same components on all servers
+
+Having the database, web server, and application server on the same machines can be a problem.
+
+Each component competes for the same resources:
+
+* CPU
+* RAM
+* disk I/O
+* network bandwidth
+
+For example, if MySQL uses too much memory, the application server may become slow.
+
+It also makes scaling harder.
+
+A better design is to separate roles:
+
+* dedicated web/application servers
+* dedicated database servers
+* dedicated load balancers
+* dedicated monitoring infrastructure
